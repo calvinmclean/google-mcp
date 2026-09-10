@@ -1,6 +1,29 @@
 # Google MCP Servers
 
-Local development and testing instructions for the Google MCP servers. Each server uses a Google OAuth Desktop client token forwarded by MCP Inspector.
+Local development and testing instructions for the Google MCP servers. Use Docker Compose with the OAuth proxy, or run a server directly with a Google OAuth Desktop client token forwarded by MCP Inspector.
+
+## Docker Compose with OAuth
+
+Each server directory contains a Compose setup with the MCP server, PostgreSQL, and OAuth proxy `v0.0.3`. You need Docker and a Google OAuth **Web application** client with `http://localhost:8080/callback` as an authorized redirect URI. Enable the service's Google APIs and configure the OAuth audience and scopes for your test account.
+
+Set these variables in the same terminal where you run Compose:
+
+```bash
+export OAUTH_CLIENT_ID='your-google-client-id'
+export OAUTH_CLIENT_SECRET='your-google-client-secret'
+# Generate once; retain and reuse this value with the same database.
+export ENCRYPTION_KEY="$(openssl rand -base64 32)"
+
+cd gmail # Or another server directory listed below.
+docker compose up --build -d
+docker compose logs -f oauth-proxy
+```
+
+Keep the credentials and encryption key outside version control. Re-export the same key in new terminal sessions; generating a replacement prevents decryption of saved tokens.
+
+Connect MCP Inspector or another OAuth-capable MCP client using Streamable HTTP at `http://localhost:8080/mcp`, then complete Google sign-in and call a tool. Compose sets the backend's `MCP_PATH` to `/mcp` and the proxy's `MCP_SERVER_URL` to the pathless origin `http://app:9000`, as required by this proxy version. The direct-run paths in the table below remain unchanged.
+
+Run one Compose stack at a time: the files share host ports and the PostgreSQL container name. Stop a stack with `docker compose down`; its database volume remains available for the next run. Avoid `down -v` unless you intend to delete the saved OAuth data.
 
 ## Prerequisites
 
